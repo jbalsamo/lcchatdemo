@@ -1,2 +1,4 @@
 .env
 venv
+langchain_cache.db
+performance_results.png
