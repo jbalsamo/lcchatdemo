@@ -1,6 +1,6 @@
-# Flask API with LangChain and Azure OpenAI
+# Command-Line Interface with LangChain and Azure OpenAI
 
-This is a REST API built with Flask and LangChain to interact with the GPT-4o model hosted in Azure AI Foundry. It supports chat history with up to 10 interactions per session, allows starting new conversations, and handles multiple users via session IDs.
+This is a command-line tool built with LangChain to interact with the GPT-4o model hosted in Azure AI Foundry. It allows you to ask questions directly from the terminal and receive answers from the AI model.
 
 ## Prerequisites
 
@@ -21,7 +21,6 @@ pip install -r requirements.txt
 Contents of requirements.txt:
 
 ```text
-flask==3.0.3
 langchain==0.3.0
 langchain-openai==0.2.0
 python-dotenv==1.0.1
@@ -45,195 +44,101 @@ AZURE_OPENAI_CHAT_DEPLOYMENT_NAME=your-deployment-name
 
 Note: Do not commit the .env file to version control. Add it to .gitignore.
 
-### 3. Run the API
+### 3. Run the Command-Line Tool
 
-Start the Flask server on port 3000:
-
-```bash
-python app.py
-```
-
-The API will be available at http://localhost:3000/ask.
-
-## API Endpoint
-
-- URL: /ask
-- Method: POST
-- Content-Type: application/json
-
-### Request Parameters
-
-The API expects a JSON payload with the following fields:
-
-| Parameter        | Type    | Required | Description                                                                            |
-| ---------------- | ------- | -------- | -------------------------------------------------------------------------------------- |
-| question         | String  | Yes      | The question to ask GPT-4o.                                                            |
-| session_id       | String  | No       | A unique identifier for the user's session. If omitted, a new one is generated.        |
-| new_conversation | Boolean | No       | Set to true to clear the chat history and start a new conversation. Defaults to false. |
-
-### Response Format
-
-The API returns a JSON object with:
-
-- answer: The response from GPT-4o.
-- chat_history: An array of past interactions (up to 10) with role (human or ai) and content.
-- session_id: The session ID used or generated for this request.
-- status: "success" or an error message.
-
-Example response:
-
-```json
-{
-  "answer": "The capital of France is Paris.",
-  "chat_history": [
-    {"role": "human", "content": "What is the capital of France?"},
-    {"role": "ai", "content": "The capital of France is Paris."}
-  ],
-  "session_id": "user1",
-  "status": "success"
-}
-```
-
-### Testing with curl
-
-1. Ask a Question (New Session)
-
-   Start a new session without specifying a session_id:
+Use the script with a question as an argument:
 
 ```bash
-curl -X POST http://localhost:3000/ask -H "Content-Type: application/json" -d '{"question": "What is the capital of France?"}'
+python app.py "What is the capital of France?"
 ```
 
-Expected Response:
+The answer will be displayed in the console.
 
-A new session_id will be generated (e.g., a UUID like "550e8400-e29b-41d4-a716-446655440000").
+## Command-Line Usage
 
-2. Continue a Conversation (Same User)
+### Arguments
 
-Reuse the session_id from the previous response to continue the conversation:
+The command-line tool accepts the following arguments:
+
+| Argument  | Type   | Required | Description                  |
+| --------- | ------ | -------- | ---------------------------- |
+| question  | String | Yes      | The question to ask GPT-4o.  |
+
+### Output Format
+
+The tool will print both the question and the answer to the console:
+
+```
+Question: What is the capital of France?
+Answer: The capital of France is Paris.
+```
+
+### Examples
+
+1. Ask a Simple Question
 
 ```bash
-curl -X POST http://localhost:3000/ask -H "Content-Type: application/json" -d '{"question": "What about Spain?", "session_id": "550e8400-e29b-41d4-a716-446655440000"}'
+python app.py "What is the capital of France?"
 ```
 
-Expected Response:
-
-```json
-{
-"answer": "The capital of Spain is Madrid.",
-"chat_history": [
-{"role": "human", "content": "What is the capital of France?"},
-{"role": "ai", "content": "The capital of France is Paris."},
-{"role": "human", "content": "What about Spain?"},
-{"role": "ai", "content": "The capital of Spain is Madrid."}
-],
-"session_id": "550e8400-e29b-41d4-a716-446655440000",
-"status": "success"
-}
+Output:
+```
+Question: What is the capital of France?
+Answer: The capital of France is Paris.
 ```
 
-3. Start a New Conversation (Same User)
-
-Clear the chat history for an existing session by setting new_conversation to true:
+2. Ask a More Complex Question
 
 ```bash
-curl -X POST http://localhost:3000/ask -H "Content-Type: application/json" -d '{"question": "Hi there", "session_id": "550e8400-e29b-41d4-a716-446655440000", "new_conversation": true}'
+python app.py "What are the main differences between Python and JavaScript?"
 ```
 
-Expected Response:
+Output:
+```
+Question: What are the main differences between Python and JavaScript?
+Answer: Python and JavaScript have several key differences:
 
-```json
-{
-"answer": "Hello!",
-"chat_history": [
-{"role": "human", "content": "Hi there"},
-{"role": "ai", "content": "Hello!"}
-],
-"session_id": "550e8400-e29b-41d4-a716-446655440000",
-"status": "success"
-}
+1. Use cases: Python is primarily used for backend development, data analysis, AI, and scientific computing, while JavaScript was originally designed for web browsers but now also runs on servers (Node.js).
+
+2. Typing: Python uses dynamic typing but is strongly typed, while JavaScript is both dynamically and weakly typed.
+
+3. Syntax: Python uses indentation for code blocks and emphasizes readability, while JavaScript uses curly braces and semicolons.
+
+4. Execution: Python is typically compiled to bytecode and then interpreted, while JavaScript is interpreted directly by browsers or Node.js.
+
+5. Concurrency: JavaScript uses an event-driven, non-blocking I/O model with a single thread and asynchronous callbacks, while Python traditionally uses threads or processes for concurrency (though it also supports async/await).
+
+6. Libraries: Python has extensive libraries for scientific computing and data analysis, while JavaScript has a vast ecosystem for web development.
 ```
 
-4. Multiple Users Example
-
-Simulate two users with different session_ids:
-
-User 1:
+3. Ask for Code Examples
 
 ```bash
-curl -X POST http://localhost:3000/ask -H "Content-Type: application/json" -d '{"question": "What is 2+2?", "session_id": "user1"}'
+python app.py "How do I read a file in Python?"
 ```
 
-Response:
+Output:
+```
+Question: How do I read a file in Python?
+Answer: Here's how to read a file in Python:
 
-```json
-{
-"answer": "2 + 2 is 4.",
-"chat_history": [
-{"role": "human", "content": "What is 2+2?"},
-{"role": "ai", "content": "2 + 2 is 4."}
-],
-"session_id": "user1",
-"status": "success"
-}
+```python
+# Method 1: Read entire file as a string
+with open('filename.txt', 'r') as file:
+    content = file.read()
+    print(content)
+
+# Method 2: Read line by line
+with open('filename.txt', 'r') as file:
+    for line in file:
+        print(line.strip())
+
+# Method 3: Read all lines into a list
+with open('filename.txt', 'r') as file:
+    lines = file.readlines()
+    for line in lines:
+        print(line.strip())
 ```
 
-User 2:
-
-```bash
-curl -X POST http://localhost:3000/ask -H "Content-Type: application/json" -d '{"question": "What’s the weather like?", "session_id": "user2"}'
+The `with` statement ensures the file is properly closed after reading. The 'r' parameter indicates read mode.
 ```
-
-Response:
-
-```json
-{
-"answer": "I don’t have real-time weather data, but can you tell me a specific location?",
-"chat_history": [
-{"role": "human", "content": "What’s the weather like?"},
-{"role": "ai", "content": "I don’t have real-time weather data, but can you tell me a specific location?"}
-],
-"session_id": "user2",
-"status": "success"
-}
-```
-
-User 1 Continues:
-
-```bash
-curl -X POST http://localhost:3000/ask -H "Content-Type: application/json" -d '{"question": "What is 3+3?", "session_id": "user1"}'
-```
-
-Response:
-
-```json
-{
-  "answer": "3 + 3 is 6.",
-  "chat_history": [
-    {"role": "human", "content": "What is 2+2?"},
-    {"role": "ai", "content": "2 + 2 is 4."},
-    {"role": "human", "content": "What is 3+3?"},
-    {"role": "ai", "content": "3 + 3 is 6."}
-  ],
-  "session_id": "user1",
-  "status": "success"
-}
-```
-
-### Notes
-
-- Port: The API runs on port 3000. Ensure this port is free on your machine.
-
-- Session Persistence: Chat history is stored in memory and resets when the app restarts. For production, consider using a database or Redis.
-
-- Error Handling: If a request fails (e.g., missing question), the API returns a 400 or 500 status with an error message.
-
-### Troubleshooting
-
-- API Not Responding: Check the console for errors (e.g., invalid Azure credentials).
-
-- History Not Updating: Verify the session_id is consistent across requests.
-
-- Port Conflict: Use netstat -tuln | grep 3000 (Linux/Mac) or netstat -aon | findstr 3000 (Windows) to ensure port 3000 is available.
-
-Enjoy using the API!
