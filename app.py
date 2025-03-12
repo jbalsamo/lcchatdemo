@@ -42,8 +42,6 @@ prompt_template = ChatPromptTemplate.from_messages([
 # Section 5: Create a Chain
 chain = prompt_template | llm
 
-
-
 # Section 5: Define the REST API Endpoint
 @app.route('/ask', methods=['POST'])
 def ask_question():
