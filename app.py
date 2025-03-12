@@ -16,7 +16,11 @@ required_vars = {
     "AZURE_OPENAI_API_KEY": "API key",
     "AZURE_OPENAI_ENDPOINT": "endpoint",
     "AZURE_OPENAI_API_VERSION": "API version",
-    "AZURE_OPENAI_CHAT_DEPLOYMENT_NAME": "deployment name"
+    "AZURE_OPENAI_CHAT_DEPLOYMENT_NAME": "deployment name",
+    "LANGSMITH_TRACING": "tracing",
+    "LANGSMITH_ENDPOINT": "endpoint",
+    "LANGSMITH_API_KEY": "API key",
+    "LANGSMITH_PROJECT": "project"
 }
 for var, desc in required_vars.items():
     if not os.getenv(var):
