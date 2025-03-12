@@ -55,7 +55,11 @@ required_vars = {
     "AZURE_OPENAI_API_KEY": "API key",
     "AZURE_OPENAI_ENDPOINT": "endpoint",
     "AZURE_OPENAI_API_VERSION": "API version",
-    "AZURE_OPENAI_CHAT_DEPLOYMENT_NAME": "deployment name"
+    "AZURE_OPENAI_CHAT_DEPLOYMENT_NAME": "deployment name",
+    "LANGSMITH_TRACING": "tracing",
+    "LANGSMITH_API_KEY": "LangSmith API key",
+    "LANGSMITH_ENDPOINT": "LangSmith endpoint",
+    "LANGSMITH_PROJECT": "LangSmith project name"
 }
 for var, desc in required_vars.items():
     if not os.getenv(var):
@@ -109,23 +113,23 @@ def warm_up_connection():
         print("Warming up connection...")
         start_time = time.time()
         warm_up_chain = prompt_template | llm
-        
+
         # Send multiple warm-up requests in parallel to establish multiple connections
         with ThreadPoolExecutor(max_workers=5) as executor:
             futures = []
             for i in range(5):  # Create 5 parallel connections
                 futures.append(executor.submit(
-                    warm_up_chain.invoke, 
+                    warm_up_chain.invoke,
                     {"question": f"Hello {i}", "history": []}
                 ))
-            
+
             # Wait for all futures to complete
             for future in futures:
                 future.result()
-        
+
         duration = time.time() - start_time
         print(f"Connection warm-up complete in {duration:.2f} seconds (5 parallel connections established)")
-        
+
         # Initialize connection stats
         connection_stats["last_request_time"] = time.time()
         connection_stats["avg_response_time"] = duration / 5  # Average per connection
@@ -161,7 +165,7 @@ def start_connection_maintenance():
         while True:
             maintain_connection_pool()
             time.sleep(60)  # Check every minute
-    
+
     maintenance_thread = threading.Thread(target=maintenance_worker, daemon=True)
     maintenance_thread.start()
     print("Connection maintenance thread started")
@@ -217,10 +221,10 @@ def ask_question():
     try:
         # Start timing the request
         start_time = time.time()
-        
+
         # Update connection stats
         connection_stats["total_requests"] += 1
-        
+
         # Get JSON data from the request
         data = request.get_json()
         if not data or 'question' not in data:
@@ -259,14 +263,14 @@ def ask_question():
         # Ensure chat_history is a list
         if not isinstance(chat_history, list):
             chat_history = []
-            
+
         # Record API call start time
         api_call_start = time.time()
-        
+
         # Check if we're reusing a connection
         is_connection_reuse = connection_stats["last_request_time"] is not None and \
                             (time.time() - connection_stats["last_request_time"]) < 600  # 10 minutes
-        
+
         if is_connection_reuse:
             connection_stats["connection_reuse_count"] += 1
             print("Reusing existing connection")
@@ -277,17 +281,17 @@ def ask_question():
             "question": question,
             "history": chat_history
         })
-        
+
         # Calculate API call time
         api_call_time = time.time() - api_call_start
-        
+
         # Update connection stats
         connection_stats["last_request_time"] = time.time()
         # Update rolling average of response time
-        connection_stats["avg_response_time"] = (connection_stats["avg_response_time"] * 
-                                             (connection_stats["total_requests"] - 1) + 
+        connection_stats["avg_response_time"] = (connection_stats["avg_response_time"] *
+                                             (connection_stats["total_requests"] - 1) +
                                              api_call_time) / connection_stats["total_requests"]
-        
+
         print(f"Response (session {session_id}):", response.content)
         print(f"API call time: {api_call_time:.2f} seconds")
         print(f"Connection reuse: {is_connection_reuse}")
@@ -304,7 +308,7 @@ def ask_question():
 
         # Calculate total processing time
         total_time = time.time() - start_time
-        
+
         # Prepare the response object
         response_obj = {
             "answer": response.content,
@@ -322,19 +326,19 @@ def ask_question():
                 "connection_stats": {
                     "total_requests": connection_stats["total_requests"],
                     "connection_reuse_count": connection_stats["connection_reuse_count"],
-                    "reuse_percentage": round(connection_stats["connection_reuse_count"] / 
+                    "reuse_percentage": round(connection_stats["connection_reuse_count"] /
                                            max(1, connection_stats["total_requests"] - 1) * 100, 2),
                     "avg_response_time": round(connection_stats["avg_response_time"], 2)
                 }
             }
         }
-        
+
         # Cache the response for future use (in the background)
         thread_pool.submit(cache_response, question, response_obj, session_id)
-        
+
         # Schedule a background task to maintain the connection pool
         thread_pool.submit(maintain_connection_pool)
-        
+
         return jsonify(response_obj), 200
 
     except KeyError as e:
@@ -349,7 +353,7 @@ def get_stats():
     return jsonify({
         "total_requests": connection_stats["total_requests"],
         "connection_reuse_count": connection_stats["connection_reuse_count"],
-        "reuse_percentage": round(connection_stats["connection_reuse_count"] / 
+        "reuse_percentage": round(connection_stats["connection_reuse_count"] /
                                max(1, connection_stats["total_requests"] - 1) * 100, 2),
         "avg_response_time": round(connection_stats["avg_response_time"], 2),
         "last_request_time": connection_stats["last_request_time"],
@@ -364,7 +368,7 @@ def preload_common_questions():
         "Hello",
         "How are you?"
     ]
-    
+
     print("Preloading common questions into cache...")
     for question in common_questions:
         try:
@@ -382,17 +386,17 @@ if __name__ == '__main__':
     # Configure Flask for optimal performance
     app.config['JSON_SORT_KEYS'] = False  # Preserve JSON order for faster serialization
     app.config['PROPAGATE_EXCEPTIONS'] = True  # Better error handling
-    
+
     # Preload common questions in the background
     preload_common_questions()
-    
+
     # Start the Flask server on port 3000 with threaded=True for better concurrency
     # The threaded option allows the server to handle multiple requests simultaneously
     # which works well with our connection pooling implementation
     app.run(
-        host='0.0.0.0', 
-        port=3001, 
-        debug=True, 
+        host='0.0.0.0',
+        port=3001,
+        debug=True,
         threaded=True,
         use_reloader=False  # Disable reloader for better performance
     )
