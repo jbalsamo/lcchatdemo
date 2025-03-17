@@ -14,7 +14,7 @@ app = Flask(__name__)
 # Section 1: Configure and Validate Azure OpenAI Environment Variables
 required_vars = {
     "AZURE_OPENAI_API_KEY": "API key",
-    "AZURE_OPENAI_ENDPOINT": "endpoint",
+    "AZURE_OPENAI_API_ENDPOINT": "endpoint",
     "AZURE_OPENAI_API_VERSION": "API version",
     "AZURE_OPENAI_CHAT_DEPLOYMENT_NAME": "deployment name",
     "LANGSMITH_TRACING": "tracing",
@@ -43,7 +43,7 @@ prompt_template = ChatPromptTemplate.from_messages([
     ("human", "{question}")
 ])
 
-# Section 5: Create a Chain
+# Section 4: Create a Chain
 chain = prompt_template | llm
 
 # Section 5: Define the REST API Endpoint
@@ -81,7 +81,7 @@ def ask_question():
     except Exception as e:
         return jsonify({"error": f"Unexpected error: {type(e).__name__}: {str(e)}"}), 500
 
-# Section 7: Run the Flask Application
+# Section 6: Run the Flask Application
 if __name__ == '__main__':
     # Start the Flask server on port 3000
     app.run(host='0.0.0.0', port=3000, debug=True)
